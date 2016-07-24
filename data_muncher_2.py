@@ -29,9 +29,9 @@ class Experiment:
         current_cell = ws.cell(row=header_cell.row + 1, column=j)
         scanned_cells = []
         while not current_cell.value == None:
-            scanned_cells.append(current_cell)
+            scanned_cells.append(current_cell.value)
             current_cell = ws.cell(row=current_cell.row + 1, column=j)
-        return scanned_cells
+        return DataSeries(scanned_cells)
 
 class DataSeries():
 
@@ -49,6 +49,21 @@ class DataSeries():
         #for s in data_series.list_of_series:
         #    self.list_of_series.append(s)
         print(self.list_of_series)
+
+    def group_measurements(self):
+        zipped_data_series = []
+        for i_measurement in range(0, len(self.list_of_series[0])):
+            grouped_measurements = []
+            for i_series in range(0, len(self.list_of_series)):
+                data_point = self.list_of_series[i_series][i_measurement]
+                grouped_measurements.append(data_point)
+            zipped_data_series.append(grouped_measurements)
+        return zipped_data_series
+
+    def mean(self):
+        groups = self.group_measurements()
+        mean_measurements = [sum(g) / len(g) for g in groups]
+        return mean_measurements
 
 class MeasurementGroup():
     def __init__(self):
@@ -85,7 +100,7 @@ class MeasurementGroup():
         if isinstance(key, slice):
             raise Exception('Slice indices not implemented')
         elif isinstance(key, str):
-            return self.object_map[str]
+            return self.object_map[key].get_measurements().mean()
         else: # assume int-like object
             if key < 0: # if negative index, convert to positive and start from end
                 key += len(self)
@@ -105,8 +120,9 @@ class Well(MeasurementGroup):
 
 f = '160514 growth curves.xlsx'
 ex = Experiment(f)
-list_of_xlsx_cells = ex.read('Time [s]')
-time_labels = [cel.value for cel in list_of_xlsx_cells]
+data_series = ex.read('Time [s]')
+#time_labels = [cel.value for cel in data_series.list_of_series[0]]
+time_labels = data_series.list_of_series[0]
 S = Samples()
 
 row_ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -114,10 +130,7 @@ column_ids = map(str, range(1, 13))
 well_ids = [ r + c for r in row_ids for c in column_ids if ex.search(r + c)]  # Get well IDs from data file
 for w in well_ids:
     W = Well()
-    W.measurements = DataSeries(ex.read(w))  # Read well data vertically in columns from plate reader spreadsheet
+    W.measurements = ex.read(w)  # Read well data vertically in columns from plate reader spreadsheet
     S.object_map[w] = W
 data_series = S.get_measurements()
 
-for s in data_series.list_of_series:
-    print s
-    raw_input()
