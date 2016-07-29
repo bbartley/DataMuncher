@@ -1,6 +1,7 @@
 import openpyxl as xlsx
 import numpy as np
 import numpy.ma as mask
+import matplotlib.pyplot as plt
 
 class Experiment:
     def __init__(self, xlsx_file, protocol=None):
@@ -48,7 +49,6 @@ class DataSeries():
         self.list_of_series.extend(data_series.list_of_series)
         #for s in data_series.list_of_series:
         #    self.list_of_series.append(s)
-        print(self.list_of_series)
 
     def group_measurements(self):
         zipped_data_series = []
@@ -64,6 +64,12 @@ class DataSeries():
         groups = self.group_measurements()
         mean_measurements = [sum(g) / len(g) for g in groups]
         return mean_measurements
+
+
+    def std(self):
+        groups = self.group_measurements()
+        stdevs = [ np.std(g) for g in groups]
+        return stdevs
 
 class MeasurementGroup():
     def __init__(self):
@@ -100,37 +106,84 @@ class MeasurementGroup():
         if isinstance(key, slice):
             raise Exception('Slice indices not implemented')
         elif isinstance(key, str):
-            return self.object_map[key].get_measurements().mean()
+            return self.object_map[key]
         else: # assume int-like object
             if key < 0: # if negative index, convert to positive and start from end
                 key += len(self)
             raise Exception('Numerical indices not implemented')
 
-class Groups(MeasurementGroup):
-    def __init__(self):
-        pass
+    def __repr__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.object_map.keys())
 
-class Samples(MeasurementGroup):
+    def __str__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.object_map.keys())
+
+    def mean(self):
+        return self.get_measurements().mean()
+
+    def std(self):
+        return self.get_measurements().std()
+
+class Group(MeasurementGroup):
     def __init__(self):
         MeasurementGroup.__init__(self)
+
+    def addSample(self, sample_name):
+        self.object_map[sample_name] = Sample()
+
+class Sample(MeasurementGroup):
+    def __init__(self, list_of_well_ids = None):
+        MeasurementGroup.__init__(self)
+        if list_of_well_ids:
+            for w in list_of_well_ids:
+                self.object_map[w] = Well()
+
+    def addWell(self, well_id, well_obj):
+        self.object_map[well_id] = well_obj
 
 class Well(MeasurementGroup):
     def __init__(self):
         MeasurementGroup.__init__(self)
 
+# Load data file from plate reader
 f = '160514 growth curves.xlsx'
 ex = Experiment(f)
 data_series = ex.read('Time [s]')
-#time_labels = [cel.value for cel in data_series.list_of_series[0]]
 time_labels = data_series.list_of_series[0]
-S = Samples()
 
+# Search plate reader file by well ID and associate a DataSeries with each Well
+PlateReadout = Sample()
 row_ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 column_ids = map(str, range(1, 13))
 well_ids = [ r + c for r in row_ids for c in column_ids if ex.search(r + c)]  # Get well IDs from data file
 for w in well_ids:
     W = Well()
     W.measurements = ex.read(w)  # Read well data vertically in columns from plate reader spreadsheet
-    S.object_map[w] = W
-data_series = S.get_measurements()
+    PlateReadout.addWell(w, W)
+data_series = PlateReadout.get_measurements()
 
+# List all the Wells in the data file
+print(PlateReadout)
+
+
+# Assign Samples from plate layout
+Culture1 = Sample()
+Culture1.addWell('B10', PlateReadout['B10'])
+Culture1.addWell('B11', PlateReadout['B11'])
+Culture1.addWell('B12', PlateReadout['B12'])
+
+# Print Sample statistics
+print( Culture1.mean() )
+print( Culture1.std() )
+
+# Graph the growth curve
+#plt.plot(time_labels, Culture1.mean())
+#plt.show()
+
+# TODO
+# change list operations to MaskedArray operations
+# automate reading of plate layout
+# change the return value of Experiment.read() to a DataSeries object
+# change to object_map to an OrderedDict to support representation of dose levels
