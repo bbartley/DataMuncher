@@ -45,6 +45,9 @@ class DataSeries():
     def __len__(self):
         return len(self.list_of_series)
 
+    def __str__(self):
+        return self.mean()
+
     def append(self, data_series):
         self.list_of_series.extend(data_series.list_of_series)
         #for s in data_series.list_of_series:
@@ -70,6 +73,15 @@ class DataSeries():
         groups = self.group_measurements()
         stdevs = [ np.std(g) for g in groups]
         return stdevs
+
+    def __repr__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.mean())
+
+
+    def __str__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.mean())
 
 class MeasurementGroup():
     def __init__(self):
@@ -147,6 +159,14 @@ class Well(MeasurementGroup):
     def __init__(self):
         MeasurementGroup.__init__(self)
 
+    def __repr__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.get_measurements().mean())
+
+    def __str__(self):
+        # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
+        return str(self.get_measurements().mean())
+
 # Load data file from plate reader
 f = '160514 growth curves.xlsx'
 ex = Experiment(f)
@@ -164,23 +184,23 @@ for w in well_ids:
     PlateReadout.addWell(w, W)
 data_series = PlateReadout.get_measurements()
 
-# List all the Wells in the data file
-print(PlateReadout)
-
-
 # Assign Samples from plate layout
 Culture1 = Sample()
 Culture1.addWell('B10', PlateReadout['B10'])
 Culture1.addWell('B11', PlateReadout['B11'])
 Culture1.addWell('B12', PlateReadout['B12'])
 
+# List all the Wells in the data file
+print(PlateReadout)
+
 # Print Sample statistics
-print( Culture1.mean() )
-print( Culture1.std() )
+print( Culture1['B10'])  # Prints measurements associated with this well
+print( Culture1.mean() ) # Averages Wells B10, B11, and B12
+print( Culture1.std() )  # Takes standard deviation of Wells B10, B11, and B12
 
 # Graph the growth curve
-#plt.plot(time_labels, Culture1.mean())
-#plt.show()
+plt.plot(time_labels, Culture1.mean())
+plt.show()
 
 # TODO
 # change list operations to MaskedArray operations
