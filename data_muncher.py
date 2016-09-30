@@ -167,6 +167,10 @@ class Well(MeasurementGroup):
         # TODO: if object_map points to DataSeries then return DataSeries.list_of_series
         return str(self.get_measurements().mean())
 
+
+
+
+'''
 # Load data file from plate reader
 f = '160514 growth curves.xlsx'
 ex = Experiment(f)
@@ -201,6 +205,8 @@ print( Culture1.std() )  # Takes standard deviation of Wells B10, B11, and B12
 # Graph the growth curve
 plt.plot(time_labels, Culture1.mean())
 plt.show()
+
+'''
 
 # TODO
 # change list operations to MaskedArray operations
