@@ -3,8 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import data_muncher as dm
 from scipy.optimize import fmin
-from pylab import polyfit
-from pylab import polyval
+#from pylab import polyfit
+#from pylab import polyval
+from numpy import polyfit
+from numpy import polyval
+
+### Define constants for dilution factor
+### Define constants for the starter culture OD 
 
 #Gompertz Code
 #Fit of 17_01_09 Data
@@ -68,12 +73,18 @@ blankStd = np.asarray(Blank.std())
 
 LOQ_values = 3 * blankStd
 LOQ = np.mean(LOQ_values)
-plt.plot(time_labels, MG_Control.mean())
-plt.plot(time_labels, MG_Uninduced.mean())
-plt.plot(time_labels, MG_Induced.mean())
-plt.plot(time_labels, LOQ_values)
-plt.legend(['Control', 'Uninduced', 'Induced', 'LOQ'])
-plt.show()
+
+### Start a new figure for each plot
+### Title plots
+### Legends should match data series
+### Plot individual data points instead of connecting with a line
+
+#plt.plot(time_labels, MG_Control.mean())
+#plt.plot(time_labels, MG_Uninduced.mean())
+#plt.plot(time_labels, MG_Induced.mean())
+#plt.plot(time_labels, LOQ_values)
+#plt.legend(['Control', 'Uninduced', 'Induced', 'LOQ'])
+#plt.show()
 
 #Subtract the Mean of the blank from the Mean of each Data Series
 blankAvg = np.asarray(Blank.mean())
@@ -103,6 +114,8 @@ mask_Uninduced = (MG_UninducedAvg > LOQ)
 mask_Induced = (MG_InducedAvg > LOQ)
 
 #Convert to ACF and Generate the standard of the LOQ
+
+### Value used for blank should be consistent!!!
 Control_ACF = ((MG_ControlAvg - blankAvg)/(LOQ - blank))
 Uninduced_ACF = ((MG_UninducedAvg - blankAvg)/(LOQ - blank))
 Induced_ACF = ((MG_InducedAvg - blankAvg)/(LOQ - blank))
@@ -130,6 +143,8 @@ Do not need to divide by LOQ because already standardized according to the
 code above
 '''
 
+### The ODs of starter cultures should be defined at the top of the file, where they're easier to find
+
 # Estimating the initial point of the graph by doing a 1:10^6 dilution for
 # Absorbance Measurement 
 Control_Initial = 0.795
@@ -145,10 +160,14 @@ Induced_Initial_ACF = ((Induced_Initial - blankAvg)/(LOQ - blank))
 #Must be in ACF before diluting because this is how it is possible 
 #to determine get corect dilituion since it is initially in Absorbance units
 
+### Dilution factor should be a constant defined at the beginning of the file, rather than be hard-coded 
+
 #Divide by ON by 10^6 to get the initial concentration
 Control_Initial_ACF = Control_Initial_ACF/(10E6)
 Uninduced_Initial_ACF = Uninduced_Initial_ACF/(10E6)
 Induced_Initial_ACF = Induced_Initial_ACF/(10E6)
+
+### Why is the Control different?  This is inconsistent, and results in vectors of differing length
 
 #Insert the Initial guesses
 MG_Control_ACF[0] = Control_Initial_ACF
@@ -169,6 +188,7 @@ time_induced = np.asarray(time_induced)
 time_uninduced = np.insert(time_uninduced, 0, 0)
 time_induced = np.insert(time_induced, 0, 0)
 
+### Plot data as points, not line
 plt.plot(time_control,MG_Control_ACF)
 plt.plot(time_uninduced, MG_Uninduced_ACF)
 plt.plot(time_induced, MG_Induced_ACF)
@@ -189,6 +209,8 @@ plt.legend(['Control', 'Uninduced', 'Induced', 'LOQ'])
 plt.show()
 
 #determine the linear regression for the plot
+### The following  polyfit subroutine should be factored out in a separate function
+### Not necessary to fit a 3rd degree polynomial, 1st degree should be sufficient
 (m, b, c, d) = polyfit(time_control[0:4] , MG_Control_ACF_log[0:4], 3)
 yp_control = polyval([m, b, c, d], time_labels)
 
@@ -270,6 +292,8 @@ Control with Guess
 # y = beginning linear range  (lag time)  
 #Calling the objective function and Gompertz for 10^-6 dilution
 #Culture 1 Fit
+
+### Initial estimates should not be hardcoded, but should be determine algorithmically
 a = 2.28821825e+01
 u = 6.24008204e-04
 y = 5.80621779e+03
@@ -286,13 +310,13 @@ values1 = Gompertz(estimates1, time)
 MG_Control_ACF_log_2 = MG_Control_ACF_log_2 - 18
 for i in range(len(values1)):
   values1[i] -= 18
-plt.plot(time, values1, 'b')
-plt.plot(time_control_2, MG_Control_ACF_log_2, 'go')
-plt.plot(time_labels, LOQ_values, 'k')
-plt.legend(['Gompertz', 'Control w/ Guess', 'LOQ'], loc = 'lower right')
-plt.ylabel('ACF (Arbitrary Concentration Factor)')
-plt.xlabel('Time (sec)')
-plt.show()
+#plt.plot(time, values1, 'b')
+#plt.plot(time_control_2, MG_Control_ACF_log_2, 'go')
+#plt.plot(time_labels, LOQ_values, 'k')
+#plt.legend(['Gompertz', 'Control w/ Guess', 'LOQ'], loc = 'lower right')
+#plt.ylabel('ACF (Arbitrary Concentration Factor)')
+#plt.xlabel('Time (sec)')
+#plt.show()
 
 '''
 Control
@@ -312,13 +336,13 @@ values1 = Gompertz(estimates1, time)
 MG_Control_ACF_log = MG_Control_ACF_log - 18
 for i in range(len(values1)):
   values1[i] -= 18
-plt.plot(time, values1, 'b')
-plt.plot(time_control, MG_Control_ACF_log, 'ko')
-plt.plot(time_labels, LOQ_values, 'k')
-plt.legend(['Gompertz', 'Control', 'LOQ'], loc = 'lower right')
-plt.ylabel('ACF (Arbitrary Concentration Factor)')
-plt.xlabel('Time (sec)')
-plt.show()
+#plt.plot(time, values1, 'b')
+#plt.plot(time_control, MG_Control_ACF_log, 'ko')
+#plt.plot(time_labels, LOQ_values, 'k')
+#plt.legend(['Gompertz', 'Control', 'LOQ'], loc = 'lower right')
+#plt.ylabel('ACF (Arbitrary Concentration Factor)')
+#plt.xlabel('Time (sec)')
+#plt.show()
 
 '''
 Uninduced
@@ -338,13 +362,13 @@ values1 = Gompertz(estimates1, time)
 MG_Uninduced_ACF_log = MG_Uninduced_ACF_log - 18
 for i in range(len(values1)):
   values1[i] -= 18
-plt.plot(time, values1, 'b')
-plt.plot(time_uninduced, MG_Uninduced_ACF_log, 'ko')
-plt.plot(time_labels, LOQ_values, 'k')
-plt.legend(['Gompertz', 'Uninduced', 'LOQ'], loc = 'lower right')
-plt.ylabel('ACF (Arbitrary Concentration Factor)')
-plt.xlabel('Time (sec)')
-plt.show()
+#plt.plot(time, values1, 'b')
+#plt.plot(time_uninduced, MG_Uninduced_ACF_log, 'ko')
+#plt.plot(time_labels, LOQ_values, 'k')
+#plt.legend(['Gompertz', 'Uninduced', 'LOQ'], loc = 'lower right')
+#plt.ylabel('ACF (Arbitrary Concentration Factor)')
+#plt.xlabel('Time (sec)')
+#plt.show()
 
 '''
 Induced with Guess
@@ -370,13 +394,13 @@ values1 = Gompertz(estimates1, time)
 MG_Induced_ACF_log_2 = MG_Induced_ACF_log_2 - 18
 for i in range(len(values1)):
   values1[i] -= 18
-plt.plot(time, values1, 'b')
-plt.plot(time_induced_2, MG_Induced_ACF_log_2, 'go')
-plt.plot(time_labels, LOQ_values, 'k')
-plt.legend(['Gompertz', 'Induced w/ Guess', 'LOQ'], loc = 'lower right')
-plt.ylabel('ACF (Arbitrary Concentration Factor)')
-plt.xlabel('Time (sec)')
-plt.show()
+#plt.plot(time, values1, 'b')
+#plt.plot(time_induced_2, MG_Induced_ACF_log_2, 'go')
+#plt.plot(time_labels, LOQ_values, 'k')
+#plt.legend(['Gompertz', 'Induced w/ Guess', 'LOQ'], loc = 'lower right')
+#plt.ylabel('ACF (Arbitrary Concentration Factor)')
+#plt.xlabel('Time (sec)')
+#plt.show()
 
 '''
 Induced
@@ -396,11 +420,11 @@ values1 = Gompertz(estimates1, time)
 MG_Induced_ACF_log = MG_Induced_ACF_log - 18
 for i in range(len(values1)):
   values1[i] -= 18
-plt.plot(time, values1, 'b')
-plt.plot(time_induced, MG_Induced_ACF_log, 'ko')
-plt.plot(time_labels, LOQ_values, 'k')
-plt.legend(['Gompertz', 'Induced', 'LOQ'], loc = 'lower right')
-plt.ylabel('ACF (Arbitrary Concentration Factor)')
-plt.xlabel('Time (sec)')
-plt.show()
+#plt.plot(time, values1, 'b')
+#plt.plot(time_induced, MG_Induced_ACF_log, 'ko')
+#plt.plot(time_labels, LOQ_values, 'k')
+#plt.legend(['Gompertz', 'Induced', 'LOQ'], loc = 'lower right')
+#plt.ylabel('ACF (Arbitrary Concentration Factor)')
+#plt.xlabel('Time (sec)')
+#plt.show()
 
