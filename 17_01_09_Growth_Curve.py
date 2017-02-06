@@ -151,6 +151,7 @@ Control_Initial = 0.795
 Uninduced_Initial = 0.740
 Induced_Initial = 0.748
 
+### Factor out a separate function for calculating ACF
 #Convert the initial point to ACF unites
 Control_Initial_ACF = ((Control_Initial - blankAvg)/(LOQ - blank))
 Uninduced_Initial_ACF = ((Uninduced_Initial - blankAvg)/(LOQ-blank))
