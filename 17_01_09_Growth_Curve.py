@@ -90,11 +90,6 @@ MG_ControlAvg = np.asarray(MG_Control.mean())
 MG_UninducedAvg = np.asarray(MG_Uninduced.mean())
 MG_InducedAvg = np.asarray(MG_Induced.mean())
 
-#Converting th arbitrary concentration units
-'''
-ACF = ((Asample - B)/(ALoq - B))
-'''
-
 blank = np.mean(blankAvg)
 
 #Generate the masked arrays
@@ -131,7 +126,7 @@ code above
 '''
 
 # Estimating the initial point of the graph by doing a 1:10^6 dilution for
-# Absorbance Measurement 
+# Absorbance Measurement from the ON cultures
 Control_Initial = 0.795
 Uninduced_Initial = 0.740
 Induced_Initial = 0.748
@@ -189,19 +184,19 @@ plt.legend(['Control', 'Uninduced', 'Induced', 'LOQ'])
 plt.show()
 
 #determine the linear regression for the plot
-(m, b, c, d) = polyfit(time_control[0:4] , MG_Control_ACF_log[0:4], 3)
-yp_control = polyval([m, b, c, d], time_labels)
+(m, b) = polyfit(time_control[0:4] , MG_Control_ACF_log[0:4], 1)
+yp_control = polyval([m, b], time_labels)
 
-index = 0
+index_control = 0
 for x in yp_control:
     a = 0
     a = x
     if a > MG_Control_ACF_log[0]:
         break
-    index += 1
+    index_control += 1
     
-time_control_2 = np.insert(time_control, 1, (index * 600)) 
-MG_Control_ACF_log_2 = np.insert(MG_Control_ACF_log, 1, yp_control[index])     
+time_control_2 = np.insert(time_control, 1, (index_control * 600)) 
+MG_Control_ACF_log_2 = np.insert(MG_Control_ACF_log, 1, yp_control[index_control])     
 
 #Cannot modify the MG_Uninduced because the linear regression line falls
 #above the inital point guess
@@ -210,16 +205,16 @@ MG_Control_ACF_log_2 = np.insert(MG_Control_ACF_log, 1, yp_control[index])
 (m, b) = polyfit(time_uninduced[1:3] , MG_Uninduced_ACF_log[1:3], 1)
 yp_uninduced= polyval([m, b], time_labels)
 
-index = 0
+index_un = 0
 for x in yp_uninduced:
     a = 0
     a = x
     if a > MG_Uninduced_ACF_log[0]:
         break
-    index += 1
+    index_un += 1
     
-time_uninduced = np.insert(time_uninduced, 1, (index * 600)) 
-MG_Uninduced_ACF_log = np.insert(MG_Uninduced_ACF_log, 1, yp_uninduced[index])
+time_uninduced_2 = np.insert(time_uninduced, 1, (index_un * 600)) 
+MG_Uninduced_ACF_log_2 = np.insert(MG_Uninduced_ACF_log, 1, yp_uninduced[index_un])
 
 
 #(m, b) = polyfit(time_induced[1:5] , MG_Induced_ACF_log[1:5], 1)
@@ -227,16 +222,16 @@ MG_Uninduced_ACF_log = np.insert(MG_Uninduced_ACF_log, 1, yp_uninduced[index])
 (m, b, c, d) = polyfit(time_induced[0:4] , MG_Induced_ACF_log[0:4], 3)
 yp_induced= polyval([m, b, c, d], time_labels)
 
-index = 0
+index_in = 0
 for x in yp_induced:
     a = 0
     a = x
     if a > MG_Induced_ACF_log[0]:
         break
-    index += 1
+    index_in += 1
     
-time_induced_2 = np.insert(time_induced, 1, (index * 600)) 
-MG_Induced_ACF_log_2 = np.insert(MG_Induced_ACF_log, 1, yp_induced[index])
+time_induced_2 = np.insert(time_induced, 1, (index_in * 600)) 
+MG_Induced_ACF_log_2 = np.insert(MG_Induced_ACF_log, 1, yp_induced[index_in])
 #MG_Induced_ACF_log_2 = np.insert(MG_Induced_ACF_log, 1, -8.2368454671488962)
 
 plt.plot(time_control_2, MG_Control_ACF_log_2)
@@ -383,7 +378,7 @@ Induced
 '''
 a = 2.28512755e+01
 u =  5.40429197e-04 
-y = 12000
+y = 18000
 guesses = (a, u, y)
 initial_guesses = np.asarray(guesses)
 
@@ -393,6 +388,81 @@ print estimates1
 
 time =  np.linspace(0, max(time_induced), 101)
 values1 = Gompertz(estimates1, time)
+MG_Induced_ACF_log = MG_Induced_ACF_log - 18
+for i in range(len(values1)):
+  values1[i] -= 18
+plt.plot(time, values1, 'b')
+plt.plot(time_induced, MG_Induced_ACF_log, 'ko')
+plt.plot(time_labels, LOQ_values, 'k')
+plt.legend(['Gompertz', 'Induced', 'LOQ'], loc = 'lower right')
+plt.ylabel('ACF (Arbitrary Concentration Factor)')
+plt.xlabel('Time (sec)')
+plt.show()
+
+#Redoing plots after fixing the lag time
+#guesses(a, u, y)
+def Gompertz(initial_guesses, y, t):
+    results = [] # collects the returned values
+    e = np.exp(1)
+    for x in t:
+        results.append( initial_guesses[0] * np.exp(-np.exp(((initial_guesses[1]*e)/ initial_guesses[0])*((y -x) + 1))))
+    return results
+
+def Object(initial_guesses,y, data, time):
+    output = Gompertz(initial_guesses, y,  time)
+    output = np.asarray(output)
+    result = np.sum(np.power((data - output), 2))
+    return result
+    
+'''
+
+#Control : lag time constant
+  
+a =  2.29861140e+01 
+u =  5.20537065e-04
+y = 18000
+guesses = (a, u)
+initial_guesses = np.asarray(guesses)
+
+MG_Control_ACF_log = 18 + MG_Control_ACF_log
+estimates1 = fmin(Object, initial_guesses, args = (y, MG_Control_ACF_log,time_control))
+print estimates1
+
+time =  np.linspace(0, max(time_control), 101)
+values1 = Gompertz(estimates1, y, time)
+MG_Control_ACF_log = MG_Control_ACF_log - 18
+for i in range(len(values1)):
+  values1[i] -= 18
+plt.plot(time, values1, 'b')
+plt.plot(time_control, MG_Control_ACF_log, 'ko')
+plt.plot(time_labels, LOQ_values, 'k')
+plt.legend(['Gompertz', 'Control', 'LOQ'], loc = 'lower right')
+plt.ylabel('ACF (Arbitrary Concentration Factor)')
+plt.xlabel('Time (sec)')
+plt.show()
+'''
+
+
+'''
+Induced: lag time constant
+'''
+a =  2.27952908e+01
+u = 5.08170193e-04
+y = 1200
+
+count = y /600
+for i in xrange(count):
+    MG_Induced_ACF_log =  np.insert(MG_Induced_ACF_log, 0, MG_Induced_ACF_log[0])
+    time_induced = np.insert(time_induced, 0, (i+1)*600)
+guesses = (a, u)
+initial_guesses = np.asarray(guesses)
+
+MG_Induced_ACF_log = 18 + MG_Induced_ACF_log
+estimates1 = fmin(Object, initial_guesses, args = (y, MG_Induced_ACF_log,time_induced))
+print estimates1
+
+time =  np.linspace(0, max(time_induced), 101)
+values1 = Gompertz(estimates1, y, time)
 MG_Induced_ACF_log = MG_Induced_ACF_log - 18
 for i in range(len(values1)):
   values1[i] -= 18
