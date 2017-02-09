@@ -6,6 +6,9 @@ from scipy.optimize import fmin
 from pylab import polyfit
 from pylab import polyval
 
+#February 8th updated code
+
+
 #Gompertz Code
 #Fit of 17_01_09 Data
 f = '17_01_09 Growth Curve.xlsx'
